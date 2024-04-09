@@ -4,12 +4,13 @@ from bs4 import BeautifulSoup
 import numpy as np
 import json
 import re
+from rich import print
 
 
 def delete_accents(array: list) -> list:
     """Elimina Acentos con Unidecode
     """
-    return [unidecode(element) for element in array]
+    return [unidecode(element).lower() for element in array]
 
 
 def get_locatel_drugs() -> list:
@@ -48,7 +49,7 @@ def find_similars(drugs: list, umbral: int) -> dict[list]:
             continue
 
         toCorrect[drugA] = []
-        # N elementos a la derecha y N a la izquierda de drugA, determinado por el umbral
+        # N elementos a la derecha y N a la izquierda de drugA, determinado por el umbral   
         surroundingDrugs = drugs[max(0, i - umbral): i] + drugs[i + 1: min(i + umbral + 1, len(drugs))]
 
         for drugB in surroundingDrugs:
@@ -70,8 +71,6 @@ def find_similars(drugs: list, umbral: int) -> dict[list]:
 
 def remove_similars(drugs: list) -> list:
 
-    # toCorrect = find_similars(drugs, 30)
-
     with open('input/to_remove.json', 'r') as toRemove:
         toRemove = json.loads(toRemove.read())  # Lista de medicamentos a remover
 
@@ -80,6 +79,9 @@ def remove_similars(drugs: list) -> list:
 
     drugs.extend(["Factor Ix De La Coagulacion",
                   "Factor Viii De La Coagulacion"])
+    
+    # toCorrect = find_similars(drugs, 30)
+    
     return drugs
 
 
@@ -133,7 +135,7 @@ def sarfe() -> list:
     with open('input/Description-Sarfe.txt', 'r', encoding='utf-8') as med:
         drugs = med.read().split('\n')
 
-    drugs = delete_duplicates([x.lower() for x in drugs])
+    drugs = delete_duplicates(drugs)
 
     drugsExtended = clean_drug_strings(drugs)
 
@@ -150,11 +152,11 @@ def main():
     locatelList = locatel()
     sarfeList = sarfe()
 
-    drugs = remove_similars(sorted(locatelList + sarfeList))
+    drugs = delete_duplicates(locatelList + sarfeList)
 
-    drugs = [x.title().replace('  ', ' ') for x in sorted(drugs)]
+    drugs = remove_similars(sorted(drugs))
 
-    drugs = sorted(delete_duplicates(drugs))
+    drugs = sorted([x.title().replace('  ', ' ') for x in drugs])
 
     drugs = {
         'description': 'Lista de Medicamentos Esenciales y Comercializados en Venezuela',
